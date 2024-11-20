@@ -24,31 +24,23 @@ export type Performance = {
 };
 
 const axios = _axios.create({
-  baseURL: import.meta.env.APP_API_URL || "https://fund-api.cryptocopyinvest.com",
+  baseURL: import.meta.env.APP_API_URL,
   headers: {
     "Content-type": "application/json",
-    "X-Token": localStorage.__X_TOKEN__ || "-",
+    "X-Token": sessionStorage.__X_TOKEN__ || "-",
   },
 });
 
 export function getAccounts() {
-  const debug = false;
-  if (debug) {
-    return Promise.resolve([
-      {
-        name: "Account 1",
-        apiKey: "123************",
-        status: "valid",
-      },
-      {
-        name: "Account 2",
-        apiKey: "456************",
-        status: "invalid",
-      },
-    ] as Account[]);
-  }
   return axios.get("/api/all").then((res) => {
     return (res?.data?.accounts || []) as Account[];
+  }).catch(() => {
+    delete sessionStorage.__X_TOKEN__;
+    alert("Invalid token, please login again.");
+    setTimeout(() => {
+      window.location.reload();
+    }, 300);
+    return Promise.reject("Invalid token");
   });
 }
 

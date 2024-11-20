@@ -1,20 +1,64 @@
-import { Container, Divider, Flex, Text } from "@mantine/core";
+import {
+  Button,
+  Center,
+  Container,
+  Divider,
+  Flex,
+  Modal,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { IconCurrencyBitcoin } from "@tabler/icons-react";
+import { useState } from "react";
 import Body from "./components/main";
 
 export default function App() {
+  const [authed] = useState(
+    sessionStorage.__X_TOKEN__ ? true : false,
+  );
+  const [token, setToken] = useState("");
   return (
     <Container fluid>
-      <Flex
-        h="100vh"
-        direction="column"
-        style={{ overflow: "hidden" }}
+      <Modal
+        centered
+        opened={!authed}
+        onClose={close}
+        withCloseButton={false}
       >
-        <Header />
-        <Body />
-        <Divider my="xs" color="gray.3" />
-        <Footer />
-      </Flex>
+        <form
+          onSubmit={() => {
+            if (token) {
+              sessionStorage.__X_TOKEN__ = token;
+              window.location.reload();
+            }
+          }}
+        >
+          <TextInput
+            mb="sm"
+            placeholder="Please enter access key"
+            onChange={(e) => {
+              setToken(e.target.value?.trim());
+            }}
+          />
+          <Center>
+            <Button type="submit">Submit</Button>
+          </Center>
+        </form>
+      </Modal>
+      {authed ? (
+        <Flex
+          h="100vh"
+          direction="column"
+          style={{ overflow: "hidden" }}
+        >
+          <Header />
+          <Body />
+          <Divider my="xs" color="gray.3" />
+          <Footer />
+        </Flex>
+      ) : (
+        <></>
+      )}
     </Container>
   );
 }
