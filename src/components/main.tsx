@@ -285,10 +285,9 @@ function _eval(data: AccountData[]): Performance {
       storages.maxRatio,
       storages.accRatio,
     );
-    const ratioDD = storages.maxRatio - ratio;
+    const ratioDD = storages.maxRatio - storages.accRatio;
     maxDDRatio = Math.max(maxDDRatio, ratioDD);
-    maxLeverage = Math.max(maxLeverage, position / equity);
-
+    maxLeverage = Math.max(maxLeverage, Math.abs(position / equity));
     const month = new Date(ts).getMonth();
     if (month !== storages.month) {
       const prRate =
@@ -321,7 +320,7 @@ function _eval(data: AccountData[]): Performance {
     winRate: _round(storages.win / (storages.win + storages.lose), 4),
     maxDrawdown,
     recoverDays,
-    maxDDRatio: _round(maxLeverage, 4),
+    maxDDRatio: _round(maxDDRatio, 4),
     sharpRatio: _round((pnlRatio - riskFreeRate) / yieldRate, 3),
     turnoverRatio: 0, // TODO
     profitVsLossRatio: 0, // TODO
