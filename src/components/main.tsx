@@ -221,6 +221,12 @@ function _round(value: number, digits = 2) {
   return Number(value.toFixed(digits));
 }
 
+function _log(...args: unknown[]) {
+  if (window.location.href.includes("localhost")) {
+    console.log(args); // eslint-disable-line no-console
+  }
+}
+
 function _eval(data: AccountData[]): Performance {
   if (!data.length) {
     return {
@@ -277,6 +283,17 @@ function _eval(data: AccountData[]): Performance {
     }
     maxDrawdown = Math.max(maxDrawdown, dd);
 
+    const month = new Date(ts).getMonth();
+    if (month !== storages.month || total - 1 === idx) {
+      const e = total - 1 === idx ? equity : storages.equity;
+      const prRate =
+        (e - storages.beginOfMonthEquity) /
+        storages.beginOfMonthEquity;
+      storages.pfRates.push(prRate);
+      storages.month = month;
+      storages.beginOfMonthEquity = storages.equity;
+    }
+
     const ratio = (equity - storages.equity) / storages.equity;
     storages.equity = equity;
     storages.maxEquity = Math.max(storages.maxEquity, equity);
@@ -288,18 +305,11 @@ function _eval(data: AccountData[]): Performance {
     const ratioDD = storages.maxRatio - storages.accRatio;
     maxDDRatio = Math.max(maxDDRatio, ratioDD);
     maxLeverage = Math.max(maxLeverage, Math.abs(position / equity));
-    const month = new Date(ts).getMonth();
-    if (month !== storages.month) {
-      const prRate =
-        (equity - storages.beginOfMonthEquity) /
-        storages.beginOfMonthEquity;
-      storages.pfRates.push(prRate);
-      storages.month = month;
-    }
+
     return idx > 0 ? ratio : 0;
   });
   let yieldRate = 0;
-  const pnlRatio = (finalEquity - dayZeroEquity) / dayZeroEquity;
+  _log(storages.pfRates);
   if (storages.pfRates.length) {
     const avgPfRate =
       storages.pfRates.reduce((acc, cur) => acc + cur, 0) /
@@ -310,9 +320,11 @@ function _eval(data: AccountData[]): Performance {
     const avgDiffSqr =
       diffSqr.reduce((acc, cur) => acc + cur, 0) / diffSqr.length;
     yieldRate = Math.sqrt(avgDiffSqr);
+    _log(avgPfRate, yieldRate);
   }
 
   const riskFreeRate = 0;
+  const pnlRatio = (finalEquity - dayZeroEquity) / dayZeroEquity;
   return {
     initValue: dayZeroEquity,
     pnl: finalEquity - dayZeroEquity,
