@@ -23,8 +23,8 @@ const LABELS: Record<string, string> = {
   recoverDays: "Recover (Days)", // ドローダウン回復までの日数
   maxDDRatio: "Max Drawdown (Ratio)", // MAXドローダウン（日）
   sharpRatio: "Sharp Ratio", // シャープレシオ
-  turnoverRatio: "Turnover Ratio", // 回転率
-  profitVsLossRatio: "Profit/Loss Ratio", // Profit/Loss Ratio
+  // turnoverRatio: "Turnover Ratio", // 回転率
+  // profitVsLossRatio: "Profit/Loss Ratio", // Profit/Loss Ratio
   maxLeverage: "Max Leverage", // 最大レバレッジ
 };
 
