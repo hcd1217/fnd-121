@@ -2,12 +2,10 @@ import _axios from "axios";
 
 export type Account = {
   name: string;
-  apiKey: string;
   code: string;
-  status: "valid" | "invalid" | "unverified";
 };
 
-export type AccountData = [number, number, number, number];
+export type AccountData = [number, number, number, number, number];
 
 export type Performance = {
   initValue: number;
@@ -15,11 +13,13 @@ export type Performance = {
   pnlRatio: number;
   winRate: number;
   maxDrawdown: number;
+  dailyMaxDrawdownRatio: number;
   recoverDays: number;
   maxDDRatio: number;
-  sharpRatio: number;
   turnoverRatio: number;
   profitVsLossRatio: number;
+  sharpRatio: number;
+  annualizedSharpRatio: number;
   maxLeverage: number;
 };
 
@@ -32,16 +32,19 @@ const axios = _axios.create({
 });
 
 export function getAccounts() {
-  return axios.get("/api/all").then((res) => {
-    return (res?.data?.accounts || []) as Account[];
-  }).catch(() => {
-    delete sessionStorage.__X_TOKEN__;
-    alert("Invalid token, please login again.");
-    setTimeout(() => {
-      window.location.reload();
-    }, 300);
-    return Promise.reject("Invalid token");
-  });
+  return axios
+    .get("/api/all")
+    .then((res) => {
+      return (res?.data?.accounts || []) as Account[];
+    })
+    .catch(() => {
+      delete sessionStorage.__X_TOKEN__;
+      alert("Invalid token, please login again.");
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+      return Promise.reject("Invalid token");
+    });
 }
 
 export function getData(account: Account) {

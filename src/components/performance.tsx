@@ -15,17 +15,14 @@ type PerformanceProps = {
 };
 
 const LABELS: Record<string, string> = {
-  initValue: "Initial", // 開始金額
-  pnl: "PnL", // 損益
-  pnlRatio: "PnL Ratio", // 損益率(%)
-  winRate: "Win Rate (Days)", // 勝率（日）
-  maxDrawdown: "Max Drawdown", // MAXドローダウン
-  recoverDays: "Recover (Days)", // ドローダウン回復までの日数
-  maxDDRatio: "Max Drawdown (Ratio)", // MAXドローダウン（日）
-  sharpRatio: "Sharp Ratio", // シャープレシオ
-  // turnoverRatio: "Turnover Ratio", // 回転率
-  // profitVsLossRatio: "Profit/Loss Ratio", // Profit/Loss Ratio
-  maxLeverage: "Max Leverage", // 最大レバレッジ
+  pnlRatio: "PnL Ratio",
+  winRate: "Win Rate (Days)",
+  sharpRatio: "Sharp Ratio",
+  maxDDRatio: "Max Drawdown (Ratio)",
+  dailyMaxDrawdownRatio: "Daily Max Drawdown (Ratio)",
+  recoverDays: "Recover (Days)",
+  annualizedSharpRatio: "Sharp Ratio",
+  maxLeverage: "Max Leverage",
 };
 
 const OPTIONS = [
@@ -247,14 +244,12 @@ function TableComponent({ performance }: PerformanceProps) {
   return (
     <Table verticalSpacing="md">
       <Table.Tbody>
-        {Object.entries(performance).map(([key, value]) => {
-          if (!LABELS[key]) {
-            return <></>;
-          }
+        {Object.entries(LABELS).map(([key, label]) => {
+          const value = performance[key as keyof PerformanceType];
           return (
             <Table.Tr key={key} bg={"var(--mantine-color-gray-0"}>
               <Table.Td fw={600} c={"#000"} p="xs">
-                {LABELS[key]}
+                {label}
               </Table.Td>
               <Table.Td
                 fw={600}
@@ -263,7 +258,7 @@ function TableComponent({ performance }: PerformanceProps) {
                 px="lg"
                 align="right"
               >
-                {_value(key, value)}
+                {_value(key, value || 0)}
               </Table.Td>
             </Table.Tr>
           );
@@ -273,28 +268,20 @@ function TableComponent({ performance }: PerformanceProps) {
   );
 }
 
-function _value(key: string, value: number, base = "USDT") {
+function _value(key: string, value: number) {
   switch (key) {
-    case "initValue":
-      return `${value.toLocaleString()} ${base}`;
-    case "pnl":
-      return `${value.toLocaleString()} ${base}`;
     case "pnlRatio":
       return `${(100 * value).toLocaleString()}%`;
     case "winRate":
       return `${(100 * value).toLocaleString()}%`;
-    case "maxDrawdown":
-      return `${value.toLocaleString()} ${base}`;
     case "recoverDays":
       return value ? `${value.toLocaleString()} days` : "-";
+    case "dailyMaxDrawdownRatio":
+      return `${(100 * value).toLocaleString()}%`;
     case "maxDDRatio":
       return `${(100 * value).toLocaleString()}%`;
     case "sharpRatio":
       return value ? `${value.toLocaleString()}` : "-";
-    case "turnoverRatio":
-      return value ? `${value.toLocaleString()}%` : "-";
-    case "profitVsLossRatio":
-      return value ? `${value.toLocaleString()}%` : "-";
     case "maxLeverage":
       return value ? `${value.toLocaleString()}x` : "-";
     default:

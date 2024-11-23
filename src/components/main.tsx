@@ -235,11 +235,13 @@ function _eval(data: AccountData[]): Performance {
       pnlRatio: 0,
       winRate: 0,
       maxDrawdown: 0,
+      dailyMaxDrawdownRatio: 0,
       recoverDays: 0,
       maxDDRatio: 0,
-      sharpRatio: 0,
       turnoverRatio: 0,
       profitVsLossRatio: 0,
+      sharpRatio: 0,
+      annualizedSharpRatio: 0,
       maxLeverage: 0,
     };
   }
@@ -249,6 +251,7 @@ function _eval(data: AccountData[]): Performance {
   let maxDrawdown = 0,
     maxDDRatio = 0,
     maxLeverage = 0,
+    dailyMaxDrawdownRatio = 0,
     recoverDays = 0;
   const storages = {
     win: 0,
@@ -262,9 +265,14 @@ function _eval(data: AccountData[]): Performance {
     recoverDays: 0,
     maxRatio: 0,
     accRatio: 0,
+    accDeposit: 0,
   };
   // date, price, equity, position
-  data.forEach(([ts, , equity, position], idx) => {
+  data.forEach(([ts, , equity, position, deposit], idx) => {
+    storages.accDeposit += deposit || 0;
+    if (isNaN(storages.accDeposit)) {
+      _log("accDeposit", storages.accDeposit, deposit);
+    }
     if (idx > 0) {
       if (equity > storages.equity) {
         storages.win++;
@@ -272,7 +280,7 @@ function _eval(data: AccountData[]): Performance {
         storages.lose++;
       }
     }
-    const dd = storages.maxEquity - equity;
+    const dd = storages.maxEquity - equity + storages.accDeposit;
     if (dd > 0) {
       storages.recover = false;
       storages.recoverDays++;
@@ -294,7 +302,8 @@ function _eval(data: AccountData[]): Performance {
       storages.beginOfMonthEquity = storages.equity;
     }
 
-    const ratio = (equity - storages.equity) / storages.equity;
+    const ratio =
+      (equity - deposit - storages.equity) / storages.equity;
     storages.equity = equity;
     storages.maxEquity = Math.max(storages.maxEquity, equity);
     storages.accRatio += ratio;
@@ -303,39 +312,57 @@ function _eval(data: AccountData[]): Performance {
       storages.accRatio,
     );
     const ratioDD = storages.maxRatio - storages.accRatio;
-    maxDDRatio = Math.max(maxDDRatio, ratioDD);
-    maxLeverage = Math.max(maxLeverage, Math.abs(position / equity));
 
-    return idx > 0 ? ratio : 0;
+    maxDDRatio = Math.max(maxDDRatio, ratioDD);
+    dailyMaxDrawdownRatio = Math.max(dailyMaxDrawdownRatio, ratio);
+    maxLeverage = Math.max(maxLeverage, Math.abs(position / equity));
   });
-  let yieldRate = 0;
-  _log(storages.pfRates);
+
+  const riskFreeRate = 0;
+  const initValue = dayZeroEquity;
+  const pnl = finalEquity - dayZeroEquity - storages.accDeposit;
+  const pnlRatio = pnl / initValue;
+  let sharpRatio = 0,
+    annualizedSharpRatio = 0;
   if (storages.pfRates.length) {
+    _log(
+      "pfRates",
+      storages.pfRates.map((rate) => _round(rate * 100, 2)),
+    );
     const avgPfRate =
       storages.pfRates.reduce((acc, cur) => acc + cur, 0) /
       storages.pfRates.length;
+    _log("avgPfRate", _round(avgPfRate * 100, 2));
     const diffSqr = storages.pfRates.map(
       (rate) => (rate - avgPfRate) ** 2,
     );
-    const avgDiffSqr =
-      diffSqr.reduce((acc, cur) => acc + cur, 0) / diffSqr.length;
-    yieldRate = Math.sqrt(avgDiffSqr);
-    _log(avgPfRate, yieldRate);
+    const variance =
+      diffSqr.reduce((acc, cur) => acc + cur, 0) /
+      (diffSqr.length - 1);
+    _log("variance", variance);
+
+    const annualizedPfRate = (1 + avgPfRate) ** 12;
+    _log("annualizedPfRate", _round(annualizedPfRate * 100, 2));
+    const volatility = Math.sqrt(variance);
+    const annualizedVolatility = volatility * Math.sqrt(12);
+    sharpRatio = (pnlRatio - riskFreeRate) / volatility;
+    annualizedSharpRatio =
+      (annualizedPfRate - riskFreeRate) / annualizedVolatility;
   }
 
-  const riskFreeRate = 0;
-  const pnlRatio = (finalEquity - dayZeroEquity) / dayZeroEquity;
   return {
-    initValue: dayZeroEquity,
-    pnl: finalEquity - dayZeroEquity,
+    initValue,
+    pnl,
     pnlRatio: _round(pnlRatio, 4),
     winRate: _round(storages.win / (storages.win + storages.lose), 4),
     maxDrawdown,
+    dailyMaxDrawdownRatio: _round(dailyMaxDrawdownRatio, 4),
     recoverDays,
     maxDDRatio: _round(maxDDRatio, 4),
-    sharpRatio: _round((pnlRatio - riskFreeRate) / yieldRate, 3),
     turnoverRatio: 0, // TODO
     profitVsLossRatio: 0, // TODO
+    sharpRatio,
+    annualizedSharpRatio,
     maxLeverage: _round(maxLeverage, 2),
   };
 }
