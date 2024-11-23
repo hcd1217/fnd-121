@@ -6,8 +6,10 @@ import {
   LoadingOverlay,
   Select,
   Text,
+  TextInput,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
+import { IconDeviceFloppy } from "@tabler/icons-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -34,6 +36,8 @@ export default function Main() {
   const [performance, setPerformance] = useState<Performance | null>(
     null,
   );
+  const [editMode, setEditMode] = useState(false);
+  const [fundName, setFundName] = useState("");
 
   const filteredData = useMemo(() => {
     if (!from || !to) {
@@ -52,6 +56,7 @@ export default function Main() {
     getAccounts().then((accounts) => {
       setAccounts(accounts);
       setSelectedAccount(accounts[0]);
+      setFundName(accounts[0].name);
     });
   }, []);
 
@@ -122,7 +127,10 @@ export default function Main() {
                 const account = value
                   ? accounts.find((a) => a.code === value)
                   : undefined;
-                account && setSelectedAccount(account);
+                if (account) {
+                  setSelectedAccount(account);
+                  setFundName(account.name);
+                }
               }}
             />
             <Button
@@ -130,7 +138,7 @@ export default function Main() {
                 selectedAccount &&
                 _handleExportPDF(
                   exportRef,
-                  selectedAccount.name,
+                  fundName,
                   _formatDate(filteredData[0][0]),
                   _formatDate(
                     filteredData[filteredData.length - 1][0],
@@ -147,9 +155,42 @@ export default function Main() {
 
       <Box ref={exportRef}>
         {selectedAccount ? (
-          <Text fz="h3" fw="bold" c="primary.5">
-            {selectedAccount.name}
-          </Text>
+          editMode ? (
+            <TextInput
+              w="20rem"
+              m="xs"
+              value={fundName}
+              onChange={(e) => setFundName(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setEditMode(false);
+                }
+              }}
+              rightSection={
+                <IconDeviceFloppy
+                  size={20}
+                  style={{
+                    color: "var(--mantine-color-primary-3)",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setEditMode(false)}
+                />
+              }
+            />
+          ) : (
+            <Text
+              m="xs"
+              fz="h3"
+              fw="bold"
+              c="primary.5"
+              style={{ cursor: "pointer" }}
+              onClick={() => {
+                setEditMode(true);
+              }}
+            >
+              {fundName}
+            </Text>
+          )
         ) : (
           <div>{""}</div>
         )}
@@ -158,7 +199,7 @@ export default function Main() {
             <Box flex={3}>
               <PerformanceComponent
                 performance={performance}
-                accountName={selectedAccount?.name}
+                accountName={fundName}
               />
             </Box>
             <Box p="xs" flex={7} bd={"1px solid"}>
