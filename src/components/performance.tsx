@@ -17,7 +17,6 @@ type PerformanceProps = {
 const LABELS: Record<string, string> = {
   pnlRatio: "PnL Ratio",
   winRate: "Win Rate (Days)",
-  sharpRatio: "Sharp Ratio",
   maxDDRatio: "Max Drawdown (Ratio)",
   dailyMaxDrawdownRatio: "Daily Max Drawdown (Ratio)",
   recoverDays: "Recover (Days)",
@@ -280,7 +279,7 @@ function _value(key: string, value: number) {
       return `${(100 * value).toLocaleString()}%`;
     case "maxDDRatio":
       return `${(100 * value).toLocaleString()}%`;
-    case "sharpRatio":
+    case "annualizedSharpRatio":
       return value ? `${value.toLocaleString()}` : "-";
     case "maxLeverage":
       return value ? `${value.toLocaleString()}x` : "-";
