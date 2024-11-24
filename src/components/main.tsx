@@ -65,10 +65,13 @@ export default function Main() {
       setLoading(true);
       getData(selectedAccount)
         .then((data) => {
+          const ONE_DAY = 24 * 60 * 60 * 1000;
           data.sort((a, b) => a[0] - b[0]);
           setData(data);
           const from = new Date(data[0][0]);
-          const to = new Date(data[data.length - 1][0]);
+          const to = new Date(
+            Math.min(data[data.length - 1][0], Date.now() - ONE_DAY),
+          );
           setFrom(from);
           setTo(to);
           setRange([from, to] as [Date, Date]);
