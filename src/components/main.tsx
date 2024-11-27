@@ -38,6 +38,7 @@ export default function Main() {
   const [editMode, setEditMode] = useState(false);
   const [codes, setCodes] = useState<string[]>([]);
   const [fundName, setFundName] = useState("");
+  const [mode, setMode] = useState<"web" | "pdf">("web");
 
   const { performance, fundValues } = useMemo(() => {
     if (codes.length < 1) {
@@ -115,7 +116,7 @@ export default function Main() {
       }}
       p="xs"
     >
-      <LoadingOverlay visible={loading} />
+      <LoadingOverlay visible={loading || mode === "pdf"} />
       <Flex w="100%" justify="space-between" align="center">
         {selectedAccount ? (
           <Text fz="h2" fw="bold" c="primary.5">
@@ -190,12 +191,16 @@ export default function Main() {
             <Button
               onClick={() => {
                 if (selectedAccount && from && to) {
-                  _handleExportPDF(
-                    exportRef,
-                    fundName,
-                    _formatDate(from.getTime()),
-                    _formatDate(to.getTime()),
-                  );
+                  setMode("pdf");
+                  setTimeout(() => {
+                    _handleExportPDF(
+                      exportRef,
+                      fundName,
+                      _formatDate(from.getTime()),
+                      _formatDate(to.getTime()),
+                    );
+                    setMode("web");
+                  }, 100);
                 }
               }}
             >
@@ -249,15 +254,25 @@ export default function Main() {
         )}
         {performance && (
           <Flex>
-            <Box flex={3}>
-              <PerformanceComponent
-                performance={performance}
-                accountName={fundName}
-              />
-            </Box>
-            <Box p="xs" flex={7} bd={"1px solid"}>
-              <Chart data={fundValues} />
-            </Box>
+            {mode === "web" ? (
+              <>
+                <Box flex={3}>
+                  <PerformanceComponent
+                    performance={performance}
+                    accountName={fundName}
+                  />
+                </Box>
+                <Box p="xs" flex={7} bd={"1px solid"}>
+                  <Chart data={fundValues} />
+                </Box>
+              </>
+            ) : (
+              <Flex justify="center" w="100%">
+                <Box w="60vw">
+                  <Chart data={fundValues} />
+                </Box>
+              </Flex>
+            )}
           </Flex>
         )}
       </Box>

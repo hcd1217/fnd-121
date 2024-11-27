@@ -27,7 +27,7 @@ const axios = _axios.create({
   baseURL: import.meta.env.APP_API_URL,
   headers: {
     "Content-type": "application/json",
-    "X-Token": sessionStorage.__X_TOKEN__ || "-",
+    "X-Token": sessionStorage.__X_TOKEN__,
   },
 });
 
