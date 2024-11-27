@@ -47,8 +47,15 @@ export function getAccounts() {
     });
 }
 
-export function getData(account: Account) {
-  return axios.get(`/api/data/${account.code}`).then((res) => {
-    return (res.data || []) as AccountData[];
+const data: Record<string, AccountData[]> = {};
+
+export function getData(code: string) {
+  if (data[code]) {
+    return Promise.resolve(data[code]);
+  }
+
+  return axios.get(`/api/data/${code}`).then((res) => {
+    data[code] = (res.data || []) as AccountData[];
+    return data[code];
   });
 }

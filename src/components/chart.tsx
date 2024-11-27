@@ -1,18 +1,23 @@
-import { AccountData } from "@/services/api";
 import { useMemo } from "react";
 import ReactApexChart from "react-apexcharts";
 
-const Chart = ({ data }: { data: AccountData[] }) => {
+const Chart = ({ data }: { data: number[][] }) => {
   const chartConfig = useMemo(() => {
-    const initValue = data?.[0]?.[2] || 1;
+    let initValue = 1;
     return {
       series: [
         {
           name: "Equity Ratio",
-          data: data.map((el) => ({
-            x: el[0],
-            y: ((el[2] - initValue) / initValue) * 100,
-          })),
+          data: data.map(([ts, equity], idx) => {
+            if (idx === 0) {
+              initValue = equity;
+            }
+            // eslint-disable-next-line no-console
+            return {
+              x: ts,
+              y: (equity / initValue) * 100,
+            };
+          }),
         },
       ],
       options: {
@@ -55,12 +60,12 @@ const Chart = ({ data }: { data: AccountData[] }) => {
         },
         colors: ["orange"],
         tooltip: {
-          enabled: false, // TODO: enable
-          // shared: false,
-          // y: {
-          //   formatter: (val: number) =>
-          //     `${Math.round(val).toLocaleString()}%`,
-          // },
+          // enabled: false, // TODO: enable
+          shared: false,
+          y: {
+            formatter: (val: number) =>
+              `${Math.round(val).toLocaleString()}%`,
+          },
         },
         annotations: {
           yaxis: [
