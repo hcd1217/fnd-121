@@ -1,19 +1,18 @@
 import {
-  Box,
-  Button,
+  Box, Button,
   Divider,
   Flex,
   LoadingOverlay,
   MultiSelect,
   Select,
   Text,
-  TextInput,
+  TextInput
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { IconDeviceFloppy } from "@tabler/icons-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Account,
   AccountData,
@@ -23,6 +22,8 @@ import {
 } from "../services/api";
 import Chart from "./chart";
 import PerformanceComponent from "./performance";
+
+const ONE_DAY = 24 * 60 * 60 * 1000;
 
 export default function Main() {
   const [range, setRange] = useState<[Date, Date] | null>(null);
@@ -72,41 +73,45 @@ export default function Main() {
     });
   }, []);
 
+  const updateFromAndTo = useCallback((data: AccountData[]) => {
+    const from = new Date(data[0][0]);
+    const to = new Date(
+      ONE_DAY + Math.min(
+        data[data.length - 1][0],
+        Date.now() - ONE_DAY,
+      ),
+    );
+    setFrom(from);
+    setTo(to);
+    setRange([from, to] as [Date, Date]);
+  }, []);
+
   useEffect(() => {
     const sortCode = codes[0];
+    _log("sortCode", sortCode);
     if (!sortCode) {
       return;
     }
     for (const code of codes) {
+      console.log("check code", code); // eslint-disable-line no-console
       if (!data[code]) {
         setLoading(true);
-        getData(code)
-          .then((data) => {
-            if (sortCode === code) {
-              const ONE_DAY = 24 * 60 * 60 * 1000;
-              data.sort((a, b) => a[0] - b[0]);
-              const from = new Date(data[0][0]);
-              const to = new Date(
-                ONE_DAY + Math.min(
-                  data[data.length - 1][0],
-                  Date.now() - ONE_DAY,
-                ),
-              );
-              setFrom(from);
-              setTo(to);
-              setRange([from, to] as [Date, Date]);
-              setTimeout(() => setLoading(false), 1000);
-            }
-            setData((prev) => {
-              prev[code] = data;
-              return prev;
-            });
-            setLoading(false);
-          })
-          .catch(() => setLoading(false));
+        getData(code).then((data) => {
+          data.sort((a, b) => a[0] - b[0]);
+          setData((prev) => {
+            prev[code] = data;
+            return prev;
+          });
+          if (sortCode === code) {
+            updateFromAndTo(data);
+          }
+          setLoading(false);
+        }).catch(() => setLoading(false));
+      } else if (sortCode === code) {
+        updateFromAndTo(data[code]);
       }
     }
-  }, [codes, data]);
+  }, [codes, data, updateFromAndTo]);
 
   return (
     <Box
@@ -150,7 +155,9 @@ export default function Main() {
                 clearable
                 searchable
                 onChange={(codes) => {
-                  setCodes(codes);
+                  // alert("codes" + JSON.stringify(codes));
+                  _log("codes", codes);
+                  setCodes([...codes]);
                   const account = codes[0]
                     ? accounts.find((a) => a.code === codes[0])
                     : undefined;
@@ -326,6 +333,7 @@ function _formatDate(ts: number) {
     .padStart(2, "0")}`;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _round(value: number, digits = 2) {
   return Number(value.toFixed(digits));
 }
@@ -336,7 +344,7 @@ function _sum(values: number[]) {
 
 function _log(...args: unknown[]) {
   if (window.location.href.includes("localhost")) {
-    console.log(args); // eslint-disable-line no-console
+    console.log(...args); // eslint-disable-line no-console
   }
 }
 
@@ -416,15 +424,15 @@ function _eval(lists: AccountData[][]): [Performance, number[][]] {
       maxLeverage,
       Math.abs(position / totalEquity),
     );
-    _log(i, totalEquity);
+    // _log(i, totalEquity);
   }
-  fundValues.map(([, v], idx) => _log(idx + ":", _round(v, 3)));
+  // fundValues.map(([, v], idx) => _log(idx + ":", _round(v, 3)));
   const initValue = dayZeroEquity;
-  _log("initValue:", _round(initValue, 2));
+  // _log("initValue:", _round(initValue, 2));
   const finalEquity = fundValues[fundValues.length - 1][1];
   const pnl = finalEquity - dayZeroEquity;
   const pnlRatio = pnl / initValue;
-  _log("pnlRatio:", _round(100 * pnlRatio, 2));
+  // _log("pnlRatio:", _round(100 * pnlRatio, 2));
 
   let prev = dayZeroEquity;
   const wins = fundValues.map((v) => {
@@ -486,24 +494,24 @@ function _eval(lists: AccountData[][]): [Performance, number[][]] {
   let sharpRatio = 0,
     annualizedSharpRatio = 0;
   if (storages.pfRates.length > 1) {
-    _log(
-      "pfRates",
-      storages.pfRates.map((rate) => _round(rate * 100, 2)),
-    );
+    // _log(
+    //   "pfRates",
+    //   storages.pfRates.map((rate) => _round(rate * 100, 2)),
+    // );
     const avgPfRate =
       storages.pfRates.reduce((acc, cur) => acc + cur, 0) /
       storages.pfRates.length;
-    _log("avgPfRate", _round(avgPfRate * 100, 2));
+    // _log("avgPfRate", _round(avgPfRate * 100, 2));
     const diffSqr = storages.pfRates.map(
       (rate) => (rate - avgPfRate) ** 2,
     );
     const variance =
       diffSqr.reduce((acc, cur) => acc + cur, 0) /
       (diffSqr.length - 1);
-    _log("variance", variance);
+    // _log("variance", variance);
 
     const annualizedPfRate = (1 + avgPfRate) ** 12;
-    _log("annualizedPfRate", _round(annualizedPfRate * 100, 2));
+    // _log("annualizedPfRate", _round(annualizedPfRate * 100, 2));
     const volatility = Math.sqrt(variance);
     const annualizedVolatility = volatility * Math.sqrt(12);
     sharpRatio = (pnlRatio - riskFreeRate) / volatility;
