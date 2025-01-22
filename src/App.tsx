@@ -14,7 +14,6 @@ import Body from "./components/main";
 
 export default function App() {
   const [authed] = useState(
-    // window.location.host.includes("localhost") ||
     sessionStorage.__X_TOKEN__ ? true : false,
   );
   const [token, setToken] = useState("");
