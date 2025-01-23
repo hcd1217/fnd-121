@@ -19,9 +19,10 @@ import {
   getAccounts,
   getData,
   Performance,
-} from "../services/api";
-import Chart from "./chart";
-import PerformanceComponent from "./performance";
+} from "../../services/api";
+import Chart from "../chart";
+import PerformanceComponent from "../performance";
+
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -152,11 +153,10 @@ export default function Main() {
           <Flex gap={10} key={accounts.length}>
             {isMultiple ? (
               <MultiSelect
+                maxDropdownHeight={700}
                 clearable
                 searchable
                 onChange={(codes) => {
-                  // alert("codes" + JSON.stringify(codes));
-                  _log("codes", codes);
                   setCodes([...codes]);
                   const account = codes[0]
                     ? accounts.find((a) => a.code === codes[0])
