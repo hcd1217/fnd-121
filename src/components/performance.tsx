@@ -20,7 +20,7 @@ const LABELS: Record<string, string> = {
   maxDDRatio: "Max Drawdown (Ratio)",
   dailyMaxDrawdownRatio: "Daily Max Drawdown (Ratio)",
   recoverDays: "Recover (Days)",
-  annualizedSharpRatio: "Sharp Ratio",
+  // annualizedSharpRatio: "Sharp Ratio",
   maxLeverage: "Max Leverage",
 };
 
